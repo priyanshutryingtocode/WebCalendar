@@ -1,66 +1,75 @@
 // src/components/CalendarGrid.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CalendarGrid({ currentDate, startDate, endDate, onDateClick, direction }) {
+// Mapping categories to their specific Tailwind color themes
+const THEMES = {
+  default: { core: 'bg-blue-500', range: 'bg-blue-50' },
+  work: { core: 'bg-indigo-600', range: 'bg-indigo-50' },
+  holiday: { core: 'bg-emerald-500', range: 'bg-emerald-50' },
+  personal: { core: 'bg-amber-500', range: 'bg-amber-50' },
+  pending: { core: 'bg-gray-400', range: 'bg-gray-100' } // For unsaved selections
+};
+
+export default function CalendarGrid({ currentDate, events, pendingSelection, onDateClick, direction }) {
   const daysOfWeek = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
   
   const generateGrid = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-
     const firstDay = new Date(year, month, 1).getDay();
     const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
 
     const grid = [];
 
-    for (let i = startOffset - 1; i >= 0; i--) {
-      grid.push({
-        date: daysInPrevMonth - i,
-        fullDate: new Date(year, month - 1, daysInPrevMonth - i),
-        current: false,
-        weekend: (grid.length % 7 >= 5)
-      });
-    }
+    // Helper to format Date objects to YYYY-MM-DD for comparison
+    const fmt = (y, m, d) => {
+        const date = new Date(y, m, d);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
 
-    for (let i = 1; i <= daysInMonth; i++) {
-      grid.push({
-        date: i,
-        fullDate: new Date(year, month, i),
-        current: true,
-        weekend: (grid.length % 7 >= 5)
-      });
-    }
-
-    let nextMonthDay = 1;
+    for (let i = startOffset - 1; i >= 0; i--) grid.push({ date: daysInPrevMonth - i, str: fmt(year, month - 1, daysInPrevMonth - i), current: false, weekend: (grid.length % 7 >= 5) });
+    for (let i = 1; i <= daysInMonth; i++) grid.push({ date: i, str: fmt(year, month, i), current: true, weekend: (grid.length % 7 >= 5) });
+    
+    let nextDay = 1;
     while (grid.length < 42) {
-      grid.push({
-        date: nextMonthDay,
-        fullDate: new Date(year, month + 1, nextMonthDay),
-        current: false,
-        weekend: (grid.length % 7 >= 5)
-      });
-      nextMonthDay++;
+      grid.push({ date: nextDay, str: fmt(year, month + 1, nextDay), current: false, weekend: (grid.length % 7 >= 5) });
+      nextDay++;
     }
-
     return grid;
   };
 
   const gridData = generateGrid();
-  const isSameDay = (d1, d2) => d1 && d2 && d1.toDateString() === d2.toDateString();
+
+  // Determine what theme a specific date gets
+  const getDayStatus = (dateStr) => {
+    // 1. Check if it's currently being selected (pending)
+    if (pendingSelection.start) {
+      const { start, end } = pendingSelection;
+      if (dateStr === start) return { type: 'start', theme: THEMES.pending };
+      if (end && dateStr === end) return { type: 'end', theme: THEMES.pending };
+      if (end && dateStr > start && dateStr < end) return { type: 'in-range', theme: THEMES.pending };
+    }
+
+    // 2. Check saved events
+    const event = events.find(ev => dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate));
+    if (event) {
+      const theme = THEMES[event.category || 'default'];
+      if (dateStr === event.startDate && dateStr === event.endDate) return { type: 'single', theme };
+      if (dateStr === event.startDate) return { type: 'start', theme };
+      if (dateStr === event.endDate) return { type: 'end', theme };
+      return { type: 'in-range', theme };
+    }
+
+    return null; // Normal day
+  };
 
   return (
     <div className="w-full pb-4">
       <div className="grid grid-cols-7 mb-4">
         {daysOfWeek.map((day, index) => (
-          <div 
-            key={day} 
-            className={`text-[10px] font-bold text-center tracking-wider ${
-              index >= 5 ? 'text-[#0088cc]' : 'text-gray-600'
-            }`}
-          >
+          <div key={day} className={`text-[10px] font-bold text-center tracking-wider ${index >= 5 ? 'text-[#0088cc]' : 'text-gray-600'}`}>
             {day}
           </div>
         ))}
@@ -68,7 +77,7 @@ export default function CalendarGrid({ currentDate, startDate, endDate, onDateCl
 
       <AnimatePresence mode="popLayout">
         <motion.div 
-          key={currentDate.toISOString()} // Changing the key triggers the animation
+          key={currentDate.toISOString()} 
           initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
@@ -76,38 +85,39 @@ export default function CalendarGrid({ currentDate, startDate, endDate, onDateCl
           className="grid grid-cols-7 gap-y-2"
         >
           {gridData.map((item, index) => {
-            const isStart = isSameDay(item.fullDate, startDate);
-            const isEnd = isSameDay(item.fullDate, endDate);
-            const isInRange = startDate && endDate && item.fullDate > startDate && item.fullDate < endDate;
+            const status = getDayStatus(item.str);
             
             let textColor = "text-gray-800";
             if (!item.current) textColor = "text-gray-300";
             else if (item.weekend) textColor = "text-[#0088cc]";
             
-            if (isStart || isEnd) textColor = "text-white";
+            // Override text color for solid nodes
+            if (status && (status.type === 'start' || status.type === 'end' || status.type === 'single')) {
+                textColor = "text-white";
+            }
 
             return (
               <div key={index} className="relative flex justify-center py-1">
-                {isInRange && (
-                  <div className="absolute inset-y-1 inset-x-0 bg-[#e6f3fa]"></div>
+                {/* Visual connectors for ranges based on category theme */}
+                {status && status.type === 'in-range' && (
+                  <div className={`absolute inset-y-1 inset-x-0 ${status.theme.range}`}></div>
                 )}
-                {isStart && endDate && (
-                  <div className="absolute inset-y-1 right-0 w-1/2 bg-[#e6f3fa]"></div>
+                {status && status.type === 'start' && status.type !== 'single' && (
+                  <div className={`absolute inset-y-1 right-0 w-1/2 ${status.theme.range}`}></div>
                 )}
-                {isEnd && startDate && (
-                  <div className="absolute inset-y-1 left-0 w-1/2 bg-[#e6f3fa]"></div>
+                {status && status.type === 'end' && (
+                  <div className={`absolute inset-y-1 left-0 w-1/2 ${status.theme.range}`}></div>
                 )}
 
-                {/* Framer Motion applied to the interactive button */}
+                {/* Clickable Circle */}
                 <motion.button 
-                  onClick={() => onDateClick(item.fullDate)}
+                  onClick={() => onDateClick(item.str)}
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   className={`
-                    relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors
+                    relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors font-medium
                     ${textColor}
-                    ${isStart || isEnd ? 'bg-[#0088cc] font-bold shadow-md' : 'hover:bg-gray-200 font-medium'}
-                    ${!item.current && !isStart && !isEnd ? 'font-normal' : ''}
+                    ${status && (status.type === 'start' || status.type === 'end' || status.type === 'single') ? `${status.theme.core} shadow-md` : 'hover:bg-gray-200'}
                   `}
                 >
                   {item.date}
