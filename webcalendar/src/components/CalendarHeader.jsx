@@ -1,7 +1,19 @@
 // src/components/CalendarHeader.jsx
-export default function CalendarHeader() {
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+export default function CalendarHeader({ currentDate, onPrevMonth, onNextMonth }) {
+  const monthNames = [
+    "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", 
+    "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"
+  ];
+
   return (
-    <div className="relative w-full h-80 overflow-hidden bg-gray-200">
+    <div 
+      className="relative w-full h-80 overflow-hidden bg-gray-200"
+      // We clip the bottom-left of the entire header image. 
+      // This reveals the white background of the main Calendar card underneath automatically.
+      style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 45% 100%, 0 calc(100% - 64px))' }}
+    >
       {/* Background Image */}
       <img 
         src="https://images.unsplash.com/photo-1522163182402-834f871fd851?q=80&w=2000&auto=format&fit=crop" 
@@ -10,23 +22,31 @@ export default function CalendarHeader() {
       />
       
       {/* Blue Geometric Overlay */}
-      {/* The clip-path creates the V-shape cut seen in the design */}
+      {/* Restricted to w-[55%] so it strictly lives on the right side. No overlapping! */}
       <div 
-        className="absolute bottom-0 w-full h-32 bg-[#0088cc]"
-        style={{ clipPath: 'polygon(0 100%, 0 40%, 45% 100%, 100% 0, 100% 100%)' }}
+        className="absolute bottom-0 right-0 w-[55%] h-32 bg-[#0088cc] transition-all duration-300"
+        style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
       >
-        {/* Date Text */}
-        <div className="absolute bottom-8 right-10 text-right text-white">
-          <div className="text-2xl tracking-widest font-light">2022</div>
-          <div className="text-4xl font-bold tracking-widest uppercase -mt-1">January</div>
+        <div className="absolute bottom-6 right-8 text-right text-white flex flex-col items-end">
+          
+          <div className="flex items-center gap-4 -mb-1">
+            <button onClick={onPrevMonth} className="hover:text-gray-300 transition-colors p-1">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="text-2xl tracking-widest font-light">
+              {currentDate.getFullYear()}
+            </div>
+            <button onClick={onNextMonth} className="hover:text-gray-300 transition-colors p-1">
+              <ChevronRight size={24} />
+            </button>
+          </div>
+
+          <div className="text-4xl font-bold tracking-widest uppercase">
+            {monthNames[currentDate.getMonth()]}
+          </div>
+          
         </div>
       </div>
-      
-      {/* White angled cutout on the left to match the paper overlap */}
-      <div 
-        className="absolute bottom-0 left-0 w-[45%] h-16 bg-white"
-        style={{ clipPath: 'polygon(0 100%, 0 0, 100% 100%)' }}
-      ></div>
     </div>
   );
 }

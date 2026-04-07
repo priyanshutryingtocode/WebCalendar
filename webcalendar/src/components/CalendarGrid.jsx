@@ -1,20 +1,57 @@
 // src/components/CalendarGrid.jsx
-export default function CalendarGrid() {
+export default function CalendarGrid({ currentDate }) {
   const daysOfWeek = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
   
-  // Hardcoded to match the exact January 2022 layout from the image
-  const gridData = [
-    { date: 27, current: false }, { date: 28, current: false }, { date: 29, current: false }, { date: 30, current: false }, { date: 31, current: false }, { date: 1, current: true, weekend: true }, { date: 2, current: true, weekend: true },
-    { date: 3, current: true }, { date: 4, current: true }, { date: 5, current: true }, { date: 6, current: true }, { date: 7, current: true }, { date: 8, current: true, weekend: true }, { date: 9, current: true, weekend: true },
-    { date: 10, current: true }, { date: 11, current: true }, { date: 12, current: true }, { date: 13, current: true }, { date: 14, current: true }, { date: 15, current: true, weekend: true }, { date: 16, current: true, weekend: true },
-    { date: 17, current: true }, { date: 18, current: true }, { date: 19, current: true }, { date: 20, current: true }, { date: 21, current: true }, { date: 22, current: true, weekend: true }, { date: 23, current: true, weekend: true },
-    { date: 24, current: true }, { date: 25, current: true }, { date: 26, current: true }, { date: 27, current: true }, { date: 28, current: true }, { date: 29, current: true, weekend: true }, { date: 30, current: true, weekend: true },
-    { date: 31, current: true }, { date: 1, current: false }, { date: 2, current: false }, { date: 3, current: false }, { date: 4, current: false }, { date: 5, current: false, weekend: true }, { date: 6, current: false, weekend: true },
-  ];
+  // Calculate grid data dynamically
+  const generateGrid = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    // Get the day of the week the month starts on (0 = Sun, 1 = Mon... 6 = Sat)
+    const firstDay = new Date(year, month, 1).getDay();
+    // Adjust so Monday is 0, Sunday is 6
+    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    const grid = [];
+
+    // Fill previous month's trailing days
+    for (let i = startOffset - 1; i >= 0; i--) {
+      grid.push({
+        date: daysInPrevMonth - i,
+        current: false,
+        weekend: (grid.length % 7 >= 5) // Indices 5 and 6 are Sat/Sun
+      });
+    }
+
+    // Fill current month's days
+    for (let i = 1; i <= daysInMonth; i++) {
+      grid.push({
+        date: i,
+        current: true,
+        weekend: (grid.length % 7 >= 5)
+      });
+    }
+
+    // Fill next month's leading days to complete a 42-cell grid (6 weeks)
+    let nextMonthDay = 1;
+    while (grid.length < 42) {
+      grid.push({
+        date: nextMonthDay++,
+        current: false,
+        weekend: (grid.length % 7 >= 5)
+      });
+    }
+
+    return grid;
+  };
+
+  const gridData = generateGrid();
 
   return (
     <div className="w-full pr-4 pb-4">
-      {/* Days of the Week Header */}
       <div className="grid grid-cols-7 mb-4">
         {daysOfWeek.map((day, index) => (
           <div 
@@ -28,23 +65,18 @@ export default function CalendarGrid() {
         ))}
       </div>
 
-      {/* Days Grid */}
       <div className="grid grid-cols-7 gap-y-4">
         {gridData.map((item, index) => {
-          // Determine text color based on the design rules
-          let colorClass = "text-gray-800 font-semibold"; // Default weekday
+          let colorClass = "text-gray-800 font-semibold hover:bg-gray-100 cursor-pointer rounded-full p-1"; 
           
           if (!item.current) {
-            colorClass = "text-gray-300 font-medium"; // Out of month
+            colorClass = "text-gray-300 font-medium"; 
           } else if (item.weekend) {
-            colorClass = "text-[#0088cc] font-bold"; // Current month weekend
+            colorClass = "text-[#0088cc] font-bold hover:bg-blue-50 cursor-pointer rounded-full p-1"; 
           }
 
           return (
-            <div 
-              key={index} 
-              className={`text-sm text-center ${colorClass}`}
-            >
+            <div key={index} className={`text-sm text-center flex items-center justify-center transition-colors h-6 w-6 mx-auto ${colorClass}`}>
               {item.date}
             </div>
           );
