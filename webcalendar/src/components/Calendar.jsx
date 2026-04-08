@@ -64,27 +64,59 @@ export default function Calendar() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   };
 
-  const handleDateClick = (clickedDate) => {
-    const dateStr = formatDateStr(clickedDate);
-    const clickedEvent = events.find(ev => dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate));
-
-    if (clickedEvent) {
-      setSelectedEventId(clickedEvent.id);
-      setPendingSelection({ start: null, end: null });
-      return;
+const handleDateClick = (clickedDate) => {
+  const dateStr = typeof clickedDate === 'string' ? clickedDate : formatDateStr(clickedDate);
+  
+  // 1. Logic for finishing a range (Keep this as is)
+  if (pendingSelection.start && !pendingSelection.end && pendingSelection.start !== dateStr) {
+    if (dateStr < pendingSelection.start) {
+      setPendingSelection({ start: dateStr, end: pendingSelection.start });
+    } else {
+      setPendingSelection({ ...pendingSelection, end: dateStr });
     }
-
     setSelectedEventId(null);
-    if (!pendingSelection.start || (pendingSelection.start && pendingSelection.end)) setPendingSelection({ start: dateStr, end: null });
-    else if (dateStr < pendingSelection.start) setPendingSelection({ start: dateStr, end: pendingSelection.start });
-    else setPendingSelection({ ...pendingSelection, end: dateStr });
-  };
+    return;
+  }
+
+  // 2. THE FIX: Find the event, but PRIORITIZE the shortest one (the focus marker)
+  // We sort by duration (shortest to longest)
+  const sortedEvents = [...events].sort((a, b) => {
+    const lenA = new Date(a.endDate) - new Date(a.startDate);
+    const lenB = new Date(b.endDate) - new Date(b.startDate);
+    return lenA - lenB; // Shortest first
+  });
+
+  const clickedEvent = sortedEvents.find(ev => 
+    dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate)
+  );
+
+  // 3. Smart Toggle: If we clicked the focus event and it's not already open, open it.
+  if (clickedEvent && selectedEventId !== clickedEvent.id) {
+    setSelectedEventId(clickedEvent.id);
+    setPendingSelection({ start: null, end: null });
+    return;
+  }
+
+  // 4. If we click a day that is ALREADY open, or an empty day, start a new selection.
+  setSelectedEventId(null);
+  setPendingSelection({ start: dateStr, end: null });
+};
 
   const saveEvent = (newEventData) => {
-    if (selectedEventId) setEvents(events.map(ev => ev.id === selectedEventId ? { ...ev, ...newEventData } : ev));
-    else setEvents([...events, { ...newEventData, id: Date.now().toString() }]);
-    clearSelection();
-  };
+  if (selectedEventId) {
+    // UPDATING an existing event (either the range or the single note)
+    setEvents(events.map(ev => ev.id === selectedEventId ? { ...ev, ...newEventData } : ev));
+  } else {
+    // CREATING a brand new event
+    // We use Date.now() + Math.random() to ensure a truly unique ID
+    const newEntry = { 
+      ...newEventData, 
+      id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` 
+    };
+    setEvents([...events, newEntry]);
+  }
+  clearSelection();
+};
 
   const deleteEvent = (id) => {
     setEvents(events.filter(ev => ev.id !== id));
@@ -120,7 +152,7 @@ export default function Calendar() {
         
         <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-12 z-50 opacity-50 pointer-events-none">
            {Array.from({length: 20}).map((_, i) => (
-             <div key={i} className="w-1 h-3 bg-gray-800 dark:bg-gray-950 rounded-b-full transition-colors"></div>
+             <div key={i} className="w-1 h-3 bg-gray-800 dark:bg-gray-950 rounded-b-full transition-colors shadow-[0_2px_4px_rgba(0,0,0,0.3)]"></div>
            ))}
         </div>
 

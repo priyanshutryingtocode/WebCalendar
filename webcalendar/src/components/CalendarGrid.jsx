@@ -26,43 +26,63 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     };
 
-    for (let i = startOffset - 1; i >= 0; i--) grid.push({ date: daysInPrevMonth - i, str: fmt(year, month - 1, daysInPrevMonth - i), current: false, weekend: (grid.length % 7 >= 5) });
-    for (let i = 1; i <= daysInMonth; i++) grid.push({ date: i, str: fmt(year, month, i), current: true, weekend: (grid.length % 7 >= 5) });
+    for (let i = startOffset - 1; i >= 0; i--) grid.push({ date: daysInPrevMonth - i, str: fmt(year, month - 1, daysInPrevMonth - i), current: false });
+    for (let i = 1; i <= daysInMonth; i++) grid.push({ date: i, str: fmt(year, month, i), current: true });
     
     let nextDay = 1;
     while (grid.length < 42) {
-      grid.push({ date: nextDay, str: fmt(year, month + 1, nextDay), current: false, weekend: (grid.length % 7 >= 5) });
+      grid.push({ date: nextDay, str: fmt(year, month + 1, nextDay), current: false });
       nextDay++;
     }
     return grid;
   };
 
-  const gridData = generateGrid();
-
   const getDayStatus = (dateStr) => {
+    // 1. Pending Check
     if (pendingSelection.start) {
       const { start, end } = pendingSelection;
-      if (dateStr === start) return { type: 'start', theme: THEMES.pending };
-      if (end && dateStr === end) return { type: 'end', theme: THEMES.pending };
-      if (end && dateStr > start && dateStr < end) return { type: 'in-range', theme: THEMES.pending };
+      if (start && !end && dateStr === start) return { type: 'single', theme: THEMES.pending };
+      if (start && end) {
+        if (dateStr === start) return { type: 'start', theme: THEMES.pending };
+        if (dateStr === end) return { type: 'end', theme: THEMES.pending };
+        if (dateStr > start && dateStr < end) return { type: 'in-range', theme: THEMES.pending };
+      }
     }
 
-    const event = events.find(ev => dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate));
-    if (event) {
-      const theme = THEMES[event.category || 'default'];
-      if (dateStr === event.startDate && dateStr === event.endDate) return { type: 'single', theme };
-      if (dateStr === event.startDate) return { type: 'start', theme };
-      if (dateStr === event.endDate) return { type: 'end', theme };
-      return { type: 'in-range', theme };
-    }
-    return null; 
+    // 2. Event Sorting (Longest for BG, Shortest for Marker)
+    const sortedEvents = [...events].sort((a, b) => {
+        const lenA = new Date(a.endDate) - new Date(a.startDate);
+        const lenB = new Date(b.endDate) - new Date(b.startDate);
+        return lenA - lenB;
+    });
+
+    const focusEvent = sortedEvents.find(ev => dateStr >= ev.startDate && dateStr <= (ev.endDate || ev.startDate));
+    if (!focusEvent) return null;
+
+    const backgroundEvent = sortedEvents[sortedEvents.length - 1]; // Longest
+    const focusTheme = THEMES[focusEvent.category || 'default'];
+    const bgTheme = THEMES[backgroundEvent.category || 'default'];
+
+    let focusType = 'in-range';
+    if (focusEvent.startDate === focusEvent.endDate) focusType = 'single';
+    else if (dateStr === focusEvent.startDate) focusType = 'start';
+    else if (dateStr === focusEvent.endDate) focusType = 'end';
+
+    return {
+      type: focusType,
+      theme: focusTheme,
+      bgRangeClass: bgTheme.range,
+      isBridged: backgroundEvent.id !== focusEvent.id && dateStr >= backgroundEvent.startDate && dateStr <= backgroundEvent.endDate
+    };
   };
+
+  const gridData = generateGrid();
 
   return (
     <div className="w-full pb-2">
       <div className="grid grid-cols-7 mb-2">
-        {daysOfWeek.map((day, index) => (
-          <div key={day} className={`text-[10px] font-bold text-center tracking-wider ${index >= 5 ? 'text-[#0088cc] dark:text-[#33aaff]' : 'text-gray-600 dark:text-gray-400'}`}>
+        {daysOfWeek.map((day) => (
+          <div key={day} className="text-[10px] font-bold text-center text-gray-600 dark:text-gray-400 uppercase">
             {day}
           </div>
         ))}
@@ -72,28 +92,27 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
         {gridData.map((item, index) => {
           const status = getDayStatus(item.str);
           
-          let textColor = "text-gray-800 dark:text-gray-100";
-          if (!item.current) textColor = "text-gray-300 dark:text-gray-600";
-          else if (item.weekend) textColor = "text-[#0088cc] dark:text-[#33aaff]";
-          
-          if (status && (status.type === 'start' || status.type === 'end' || status.type === 'single')) {
-              textColor = "text-white";
-          }
-
           return (
             <div key={index} className="relative flex justify-center py-0.5">
-              {status && status.type === 'in-range' && <div className={`absolute inset-y-0.5 inset-x-0 ${status.theme.range}`}></div>}
-              {status && status.type === 'start' && status.type !== 'single' && <div className={`absolute inset-y-0.5 right-0 w-1/2 ${status.theme.range}`}></div>}
-              {status && status.type === 'end' && <div className={`absolute inset-y-0.5 left-0 w-1/2 ${status.theme.range}`}></div>}
+              {/* THE CONTINUOUS BRIDGE */}
+              {(status?.type === 'in-range' || status?.isBridged) && (
+                <div className={`absolute inset-y-0.5 inset-x-0 ${status.bgRangeClass || status.theme.range}`}></div>
+              )}
+
+              {/* START/END CAPS (Only if not bridged) */}
+              {status?.type === 'start' && !status?.isBridged && (
+                <div className={`absolute inset-y-0.5 right-0 w-1/2 ${status.theme.range}`}></div>
+              )}
+              {status?.type === 'end' && !status?.isBridged && (
+                <div className={`absolute inset-y-0.5 left-0 w-1/2 ${status.theme.range}`}></div>
+              )}
 
               <motion.button 
                 onClick={() => onDateClick(item.str)}
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.9 }}
                 className={`
                   relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors font-medium
-                  ${textColor}
-                  ${status && (status.type === 'start' || status.type === 'end' || status.type === 'single') ? `${status.theme.core} shadow-md` : 'hover:bg-gray-200 dark:hover:bg-gray-800'}
+                  ${!item.current ? 'text-gray-300 dark:text-gray-600' : 'text-gray-800 dark:text-gray-100'}
+                  ${(status?.type === 'start' || status?.type === 'end' || status?.type === 'single') ? `${status.theme.core} text-white! shadow-md` : 'hover:bg-gray-200 dark:hover:bg-gray-800'}
                 `}
               >
                 {item.date}
