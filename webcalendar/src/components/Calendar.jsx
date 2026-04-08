@@ -100,7 +100,7 @@ export default function Calendar() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 py-8 md:py-12">
-      <div className="bg-white w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col relative rounded-sm">
+      <div className="bg-white w-full max-w-xl shadow-2xl overflow-hidden flex flex-col relative rounded-sm">
         
         <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-16 z-10 opacity-50">
            {Array.from({length: 24}).map((_, i) => (
@@ -115,7 +115,7 @@ export default function Calendar() {
           direction={direction} 
         />
 
-        <div className="flex flex-col md:flex-row pt-6 pb-8 gap-8 px-6 md:px-8">
+        <div className="flex flex-col md:flex-row pt-4 pb-6 gap-4 px-4 md:px-6">
           <div className="w-full md:w-[40%] transition-all"> 
             
             {/* THE CONDITIONAL RENDER */}

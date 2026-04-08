@@ -66,8 +66,9 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
   };
 
   return (
-    <div className="w-full pb-4">
-      <div className="grid grid-cols-7 mb-4">
+    <div className="w-full pb-2">
+      {/* Reduced bottom margin from mb-4 to mb-2 */}
+      <div className="grid grid-cols-7 mt-4 mb-2">
         {daysOfWeek.map((day, index) => (
           <div key={day} className={`text-[10px] font-bold text-center tracking-wider ${index >= 5 ? 'text-[#0088cc]' : 'text-gray-600'}`}>
             {day}
@@ -82,7 +83,8 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
-          className="grid grid-cols-7 gap-y-2"
+          // Reduced vertical gap from gap-y-2 to gap-y-1
+          className="grid grid-cols-7 gap-y-1"
         >
           {gridData.map((item, index) => {
             const status = getDayStatus(item.str);
@@ -97,25 +99,26 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
             }
 
             return (
-              <div key={index} className="relative flex justify-center py-1">
+              // Reduced vertical padding from py-1 to py-0.5
+              <div key={index} className="relative flex justify-center py-0.5">
                 {/* Visual connectors for ranges based on category theme */}
                 {status && status.type === 'in-range' && (
-                  <div className={`absolute inset-y-1 inset-x-0 ${status.theme.range}`}></div>
+                  <div className={`absolute inset-y-0.5 inset-x-0 ${status.theme.range}`}></div>
                 )}
                 {status && status.type === 'start' && status.type !== 'single' && (
-                  <div className={`absolute inset-y-1 right-0 w-1/2 ${status.theme.range}`}></div>
+                  <div className={`absolute inset-y-0.5 right-0 w-1/2 ${status.theme.range}`}></div>
                 )}
                 {status && status.type === 'end' && (
-                  <div className={`absolute inset-y-1 left-0 w-1/2 ${status.theme.range}`}></div>
+                  <div className={`absolute inset-y-0.5 left-0 w-1/2 ${status.theme.range}`}></div>
                 )}
 
-                {/* Clickable Circle */}
+                {/* Clickable Circle: Shrunk w-8 h-8 to w-7 h-7, and text-sm to text-xs */}
                 <motion.button 
                   onClick={() => onDateClick(item.str)}
                   whileHover={{ scale: 1.15 }}
                   whileTap={{ scale: 0.9 }}
                   className={`
-                    relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm transition-colors font-medium
+                    relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors font-medium
                     ${textColor}
                     ${status && (status.type === 'start' || status.type === 'end' || status.type === 'single') ? `${status.theme.core} shadow-md` : 'hover:bg-gray-200'}
                   `}

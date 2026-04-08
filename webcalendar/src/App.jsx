@@ -3,8 +3,7 @@ import Calendar from './components/Calendar';
 
 function App() {
   return (
-    // The background color here ensures the page matches the calendar's container
-    <div className="min-h-screen bg-gray-100">
+    <div className="w-full min-h-screen bg-slate-100 m-0 p-0">
       <Calendar />
     </div>
   );
