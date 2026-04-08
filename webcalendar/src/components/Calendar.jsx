@@ -1,5 +1,6 @@
 // src/components/Calendar.jsx
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import CalendarHeader from './CalendarHeader';
 import NotesSection from './NotesSection';
 import EventPanel from './EventPanel';
@@ -9,7 +10,6 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date(2022, 0, 1)); 
   const [direction, setDirection] = useState(0); 
   
-  // -- Event State --
   const [events, setEvents] = useState(() => {
     const saved = localStorage.getItem('calendar_events');
     return saved ? JSON.parse(saved) : [];
@@ -18,25 +18,19 @@ export default function Calendar() {
   const [pendingSelection, setPendingSelection] = useState({ start: null, end: null });
   const [selectedEventId, setSelectedEventId] = useState(null);
 
-  // -- Global Monthly Notes State --
   const [globalNotesMap, setGlobalNotesMap] = useState(() => {
     const saved = localStorage.getItem('calendar_global_notes');
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Sync to LocalStorage
   useEffect(() => localStorage.setItem('calendar_events', JSON.stringify(events)), [events]);
   useEffect(() => localStorage.setItem('calendar_global_notes', JSON.stringify(globalNotesMap)), [globalNotesMap]);
 
-  // General Notes Logic
   const currentMonthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
   const currentGlobalNotes = globalNotesMap[currentMonthKey] || "";
   
-  const handleGlobalNotesChange = (text) => {
-    setGlobalNotesMap(prev => ({ ...prev, [currentMonthKey]: text }));
-  };
-
-  // Navigation Logic
+  const handleGlobalNotesChange = (text) => setGlobalNotesMap(prev => ({ ...prev, [currentMonthKey]: text }));
+  
   const handlePrevMonth = () => {
     setDirection(-1);
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -47,12 +41,7 @@ export default function Calendar() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-  // Selection Logic
-  const formatDateStr = (dateObj) => {
-    if (!dateObj) return null;
-    const d = new Date(dateObj);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
+  const formatDateStr = (d) => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null;
 
   const handleDateClick = (clickedDate) => {
     const dateStr = formatDateStr(clickedDate);
@@ -65,29 +54,20 @@ export default function Calendar() {
     }
 
     setSelectedEventId(null);
-    if (!pendingSelection.start || (pendingSelection.start && pendingSelection.end)) {
-      setPendingSelection({ start: dateStr, end: null });
-    } else if (dateStr < pendingSelection.start) {
-      setPendingSelection({ start: dateStr, end: pendingSelection.start });
-    } else {
-      setPendingSelection({ ...pendingSelection, end: dateStr });
-    }
+    if (!pendingSelection.start || (pendingSelection.start && pendingSelection.end)) setPendingSelection({ start: dateStr, end: null });
+    else if (dateStr < pendingSelection.start) setPendingSelection({ start: dateStr, end: pendingSelection.start });
+    else setPendingSelection({ ...pendingSelection, end: dateStr });
   };
 
-  // Event CRUD Operations
   const saveEvent = (newEventData) => {
-    if (selectedEventId) {
-      setEvents(events.map(ev => ev.id === selectedEventId ? { ...ev, ...newEventData } : ev));
-    } else {
-      setEvents([...events, { ...newEventData, id: Date.now().toString() }]);
-    }
-    setPendingSelection({ start: null, end: null });
-    setSelectedEventId(null);
+    if (selectedEventId) setEvents(events.map(ev => ev.id === selectedEventId ? { ...ev, ...newEventData } : ev));
+    else setEvents([...events, { ...newEventData, id: Date.now().toString() }]);
+    clearSelection();
   };
 
   const deleteEvent = (id) => {
     setEvents(events.filter(ev => ev.id !== id));
-    setSelectedEventId(null);
+    clearSelection();
   };
 
   const clearSelection = () => {
@@ -98,57 +78,84 @@ export default function Calendar() {
   const activeEvent = selectedEventId ? events.find(ev => ev.id === selectedEventId) : null;
   const hasActiveSelection = pendingSelection.start || activeEvent;
 
+  // NEW: Full Page 3D Flip Physics
+  const pageFlipVariants = {
+    enter: (dir) => ({
+      rotateX: dir > 0 ? 90 : -90, // Start folded up or down
+      opacity: 0,
+      originY: 0, // Hinge at the top
+    }),
+    center: {
+      rotateX: 0, // Flat
+      opacity: 1,
+      originY: 0,
+    },
+    exit: (dir) => ({
+      rotateX: dir > 0 ? -90 : 90, // Fold away
+      opacity: 0,
+      originY: 0,
+    })
+  };
+
   return (
     <div className="w-full p-4 py-8 md:py-12 flex justify-center items-center">
-      <div className="bg-white w-full max-w-xl shadow-2xl overflow-hidden flex flex-col relative rounded-sm">
+      
+      {/* The static backboard. We add [perspective:2000px] here to enable 3D space 
+        for the flipping page inside it. 
+      */}
+      <div className="bg-white w-full max-w-xl shadow-2xl relative rounded-sm perspective-[2000px]">
         
-        {/* Ring Binding visual effect */}
-        <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-12 z-10 opacity-50">
+        {/* The Spiral Rings (Static, they don't flip!) */}
+        <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-12 z-50 opacity-50 pointer-events-none">
            {Array.from({length: 20}).map((_, i) => (
              <div key={i} className="w-1 h-3 bg-gray-800 rounded-b-full"></div>
            ))}
         </div>
 
-        {/* Pass explicit Month and Year to the dynamic header */}
-        <CalendarHeader 
-          currentMonth={currentDate.getMonth()}
-          currentYear={currentDate.getFullYear()} 
-          onPrevMonth={handlePrevMonth} 
-          onNextMonth={handleNextMonth}
-          direction={direction} 
-        />
-
-        {/* Tighter padding and gap for the smaller layout */}
-        <div className="flex flex-col md:flex-row pt-4 pb-6 gap-4 px-4 md:px-6">
-          <div className="w-full md:w-[40%] flex flex-col transition-all"> 
+        {/* The Animated Page Container */}
+        <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+          <motion.div
+            key={currentMonthKey} // Triggers animation when month changes
+            custom={direction}
+            variants={pageFlipVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            // origin-top ensures the CSS transform hinges at the spiral rings
+            className="flex flex-col bg-white rounded-sm origin-top overflow-hidden" 
+          >
             
-            {hasActiveSelection ? (
-              <EventPanel 
-                pendingSelection={pendingSelection}
-                activeEvent={activeEvent}
-                onSave={saveEvent}
-                onDelete={deleteEvent}
-                onCancel={clearSelection}
-              />
-            ) : (
-              <NotesSection 
-                notes={currentGlobalNotes} 
-                onNotesChange={handleGlobalNotesChange} 
-              />
-            )}
-
-          </div>
-
-          <div className="w-full md:w-[60%] flex flex-col overflow-hidden"> 
-            <CalendarGrid 
-              currentDate={currentDate} 
-              events={events}
-              pendingSelection={pendingSelection}
-              onDateClick={handleDateClick}
-              direction={direction}
+            <CalendarHeader 
+              currentMonth={currentDate.getMonth()}
+              currentYear={currentDate.getFullYear()} 
+              onPrevMonth={handlePrevMonth} 
+              onNextMonth={handleNextMonth}
             />
-          </div>
-        </div>
+
+            <div className="flex flex-col md:flex-row pt-4 pb-6 gap-4 px-4 md:px-6">
+              <div className="w-full md:w-[40%] flex flex-col transition-all"> 
+                {hasActiveSelection ? (
+                  <EventPanel 
+                    pendingSelection={pendingSelection} activeEvent={activeEvent}
+                    onSave={saveEvent} onDelete={deleteEvent} onCancel={clearSelection}
+                  />
+                ) : (
+                  <NotesSection notes={currentGlobalNotes} onNotesChange={handleGlobalNotesChange} />
+                )}
+              </div>
+
+              <div className="w-full md:w-[60%] flex flex-col overflow-hidden"> 
+                <CalendarGrid 
+                  currentDate={currentDate} events={events}
+                  pendingSelection={pendingSelection} onDateClick={handleDateClick}
+                />
+              </div>
+            </div>
+
+          </motion.div>
+        </AnimatePresence>
+        
       </div>
     </div>
   );
