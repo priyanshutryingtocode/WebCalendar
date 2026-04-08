@@ -1,7 +1,7 @@
 // src/components/Calendar.jsx
 import { useState, useEffect } from 'react';
 import CalendarHeader from './CalendarHeader';
-import NotesSection from './NotesSection'; // Bring this back!
+import NotesSection from './NotesSection';
 import EventPanel from './EventPanel';
 import CalendarGrid from './CalendarGrid';
 
@@ -31,6 +31,7 @@ export default function Calendar() {
   // General Notes Logic
   const currentMonthKey = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
   const currentGlobalNotes = globalNotesMap[currentMonthKey] || "";
+  
   const handleGlobalNotesChange = (text) => {
     setGlobalNotesMap(prev => ({ ...prev, [currentMonthKey]: text }));
   };
@@ -40,6 +41,7 @@ export default function Calendar() {
     setDirection(-1);
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
+  
   const handleNextMonth = () => {
     setDirection(1);
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -94,31 +96,32 @@ export default function Calendar() {
   };
 
   const activeEvent = selectedEventId ? events.find(ev => ev.id === selectedEventId) : null;
-  
-  // Determine which panel to show on the left
   const hasActiveSelection = pendingSelection.start || activeEvent;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 py-8 md:py-12">
+    <div className="w-full p-4 py-8 md:py-12 flex justify-center items-center">
       <div className="bg-white w-full max-w-xl shadow-2xl overflow-hidden flex flex-col relative rounded-sm">
         
-        <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-16 z-10 opacity-50">
-           {Array.from({length: 24}).map((_, i) => (
+        {/* Ring Binding visual effect */}
+        <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-12 z-10 opacity-50">
+           {Array.from({length: 20}).map((_, i) => (
              <div key={i} className="w-1 h-3 bg-gray-800 rounded-b-full"></div>
            ))}
         </div>
 
+        {/* Pass explicit Month and Year to the dynamic header */}
         <CalendarHeader 
-          currentDate={currentDate} 
+          currentMonth={currentDate.getMonth()}
+          currentYear={currentDate.getFullYear()} 
           onPrevMonth={handlePrevMonth} 
           onNextMonth={handleNextMonth}
           direction={direction} 
         />
 
+        {/* Tighter padding and gap for the smaller layout */}
         <div className="flex flex-col md:flex-row pt-4 pb-6 gap-4 px-4 md:px-6">
-          <div className="w-full md:w-[40%] transition-all"> 
+          <div className="w-full md:w-[40%] flex flex-col transition-all"> 
             
-            {/* THE CONDITIONAL RENDER */}
             {hasActiveSelection ? (
               <EventPanel 
                 pendingSelection={pendingSelection}
@@ -136,7 +139,7 @@ export default function Calendar() {
 
           </div>
 
-          <div className="w-full md:w-[60%] overflow-hidden"> 
+          <div className="w-full md:w-[60%] flex flex-col overflow-hidden"> 
             <CalendarGrid 
               currentDate={currentDate} 
               events={events}
