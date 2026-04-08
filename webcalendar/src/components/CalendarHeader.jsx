@@ -2,7 +2,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
+// --- IMPORTANT: Import your 12 local images here ---
 import janImg from '../assets/images/month-headers/january.jpg';
 import febImg from '../assets/images/month-headers/february.jpg';
 import marImg from '../assets/images/month-headers/march.jpg';
@@ -28,34 +28,58 @@ const monthNames = [
 
 export default function CalendarHeader({ currentMonth, currentYear, onPrevMonth, onNextMonth, direction }) {
   
-  // Safely grab the current image based on the 0-11 index
   const safeMonthIndex = Math.max(0, Math.min(11, currentMonth));
   const currentHeaderImage = monthImages[safeMonthIndex];
 
-  // Framer motion variants for sliding text
-  const slideVariants = {
+  // Text sliding animation
+  const textSlideVariants = {
     enter: (dir) => ({ y: dir > 0 ? 20 : -20, opacity: 0 }),
     center: { y: 0, opacity: 1 },
     exit: (dir) => ({ y: dir < 0 ? 20 : -20, opacity: 0 })
   };
 
+  // NEW: Image sliding animation synced with the direction prop
+  const imageSlideVariants = {
+    enter: (dir) => ({ 
+      x: dir > 0 ? 30 : -30, // Slides from right (50) if going next, left (-50) if going prev
+      opacity: 0 
+    }),
+    center: { 
+      x: 0, 
+      opacity: 1 
+    },
+    exit: (dir) => ({ 
+      x: dir > 0 ? -30 : 30, // Exits to the opposite side
+      opacity: 0 
+    })
+  };
+
   return (
     <div 
-      // Shrunk height from h-80 to h-48, adjusted clip path to 32px
       className="relative w-full h-75 overflow-hidden bg-gray-200"
       style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 45% 100%, 0 calc(100% - 32px))' }}
     >
-      {/* DYNAMIC BACKGROUND IMAGE */}
-      <img 
-        src={currentHeaderImage} 
-        alt={`${monthNames[safeMonthIndex]} Header`} 
-        className="absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500"
-      />
+      {/* We add custom={direction} to the AnimatePresence so it can pass the dir to our variants */}
+      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+        <motion.img 
+          key={`${currentYear}-${safeMonthIndex}`}
+          custom={direction} // Tells the variant which way we are moving
+          src={currentHeaderImage} 
+          alt={`${monthNames[safeMonthIndex]} Header`} 
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          
+          // Apply the new sliding variants
+          variants={imageSlideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        />
+      </AnimatePresence>
       
       {/* BLUE OVERLAY */}
       <div 
-        // Shrunk height from h-32 to h-24
-        className="absolute bottom-0 right-0 w-[55%] h-24 bg-[#0088cc] transition-all duration-300"
+        className="absolute bottom-0 right-0 w-[55%] h-24 bg-[#0088cc] z-20"
         style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
       >
         <div className="absolute bottom-4 right-6 text-right text-white flex flex-col items-end">
@@ -65,13 +89,12 @@ export default function CalendarHeader({ currentMonth, currentYear, onPrevMonth,
               <ChevronLeft size={20} />
             </button>
             
-            {/* Animated Year (Shrunk text-2xl to text-xl) */}
             <div className="text-xl tracking-widest font-light relative h-6 overflow-hidden flex items-center justify-end min-w-15">
               <AnimatePresence mode="popLayout" custom={direction}>
                 <motion.div
                   key={currentYear}
                   custom={direction}
-                  variants={slideVariants}
+                  variants={textSlideVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
@@ -87,13 +110,12 @@ export default function CalendarHeader({ currentMonth, currentYear, onPrevMonth,
             </button>
           </div>
 
-          {/* Animated Month (Shrunk text-4xl to text-2xl) */}
           <div className="text-2xl font-bold tracking-widest uppercase relative h-8 overflow-hidden flex items-center justify-end min-w-37.5">
              <AnimatePresence mode="popLayout" custom={direction}>
                 <motion.div
                   key={safeMonthIndex}
                   custom={direction}
-                  variants={slideVariants}
+                  variants={textSlideVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
