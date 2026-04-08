@@ -41,7 +41,15 @@ export default function Calendar() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-  const formatDateStr = (d) => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null;
+  // THE FIX: Restored the proper Date checking logic!
+  const formatDateStr = (dateObj) => {
+    if (!dateObj) return null;
+    // If the grid already passed a formatted string, use it directly
+    if (typeof dateObj === 'string') return dateObj;
+    // Otherwise, convert it safely
+    const d = new Date(dateObj);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
 
   const handleDateClick = (clickedDate) => {
     const dateStr = formatDateStr(clickedDate);
@@ -78,20 +86,20 @@ export default function Calendar() {
   const activeEvent = selectedEventId ? events.find(ev => ev.id === selectedEventId) : null;
   const hasActiveSelection = pendingSelection.start || activeEvent;
 
-  // NEW: Full Page 3D Flip Physics
+  // Full Page 3D Flip Physics
   const pageFlipVariants = {
     enter: (dir) => ({
-      rotateX: dir > 0 ? 90 : -90, // Start folded up or down
+      rotateX: dir > 0 ? 90 : -90, 
       opacity: 0,
-      originY: 0, // Hinge at the top
+      originY: 0, 
     }),
     center: {
-      rotateX: 0, // Flat
+      rotateX: 0, 
       opacity: 1,
       originY: 0,
     },
     exit: (dir) => ({
-      rotateX: dir > 0 ? -90 : 90, // Fold away
+      rotateX: dir > 0 ? -90 : 90, 
       opacity: 0,
       originY: 0,
     })
@@ -100,12 +108,9 @@ export default function Calendar() {
   return (
     <div className="w-full p-4 py-8 md:py-12 flex justify-center items-center">
       
-      {/* The static backboard. We add [perspective:2000px] here to enable 3D space 
-        for the flipping page inside it. 
-      */}
       <div className="bg-white w-full max-w-xl shadow-2xl relative rounded-sm perspective-[2000px]">
         
-        {/* The Spiral Rings (Static, they don't flip!) */}
+        {/* The Spiral Rings */}
         <div className="absolute top-0 left-0 w-full flex justify-around px-8 md:px-12 z-50 opacity-50 pointer-events-none">
            {Array.from({length: 20}).map((_, i) => (
              <div key={i} className="w-1 h-3 bg-gray-800 rounded-b-full"></div>
@@ -115,14 +120,13 @@ export default function Calendar() {
         {/* The Animated Page Container */}
         <AnimatePresence mode="popLayout" initial={false} custom={direction}>
           <motion.div
-            key={currentMonthKey} // Triggers animation when month changes
+            key={currentMonthKey} 
             custom={direction}
             variants={pageFlipVariants}
             initial="enter"
             animate="center"
             exit="exit"
             transition={{ duration: 0.5, ease: "easeInOut" }}
-            // origin-top ensures the CSS transform hinges at the spiral rings
             className="flex flex-col bg-white rounded-sm origin-top overflow-hidden" 
           >
             

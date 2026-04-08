@@ -1,5 +1,6 @@
 // src/components/CalendarHeader.jsx
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import janImg from '../assets/images/month-headers/january.jpg';
 import febImg from '../assets/images/month-headers/february.jpg';
@@ -33,24 +34,31 @@ export default function CalendarHeader({ currentMonth, currentYear, onPrevMonth,
       />
       
       <div 
-        className="absolute bottom-0 right-0 w-[55%] h-24 bg-[#0088cc] z-20"
+        // Slightly reduced height back to h-24 to match the smaller text scale
+        className="absolute bottom-0 right-0 w-[60%] h-24 bg-[#0088cc] z-20"
         style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
       >
-        <div className="absolute bottom-4 right-6 text-right text-white flex flex-col items-end">
+        {/* CHANGED MARGIN: right-10 is now right-6 to push it closer to the edge */}
+        <div className="absolute bottom-5 right-6 text-white flex flex-col items-center gap-0.5">
           
-          <div className="flex items-center gap-3 -mb-1">
-            <button onClick={onPrevMonth} className="hover:text-gray-300 transition-colors p-1 z-10">
-              <ChevronLeft size={20} />
+          <div className="flex items-center">
+            <button onClick={onPrevMonth} className="hover:text-white/70 transition-colors p-1 z-10">
+              {/* SHRUNK ICONS: Dropped from 18 to 16 */}
+              <ChevronLeft size={16} strokeWidth={2} />
             </button>
-            <div className="text-xl tracking-widest font-light relative h-6 flex items-center justify-end min-w-15">
+            
+            {/* SHRUNK YEAR: text-sm -> text-xs, narrowed container to w-12 */}
+            <div className="text-xs tracking-[0.2em] font-light w-12 text-center">
               {currentYear}
             </div>
-            <button onClick={onNextMonth} className="hover:text-gray-300 transition-colors p-1 z-10">
-              <ChevronRight size={20} />
+            
+            <button onClick={onNextMonth} className="hover:text-white/70 transition-colors p-1 z-10">
+              <ChevronRight size={16} strokeWidth={2} />
             </button>
           </div>
 
-          <div className="text-2xl font-bold tracking-widest uppercase relative h-8 flex items-center justify-end min-w-37.5">
+          {/* SHRUNK MONTH: text-xl -> text-lg */}
+          <div className="text-lg leading-none font-bold tracking-widest uppercase">
              {monthNames[safeMonthIndex]}
           </div>
           
