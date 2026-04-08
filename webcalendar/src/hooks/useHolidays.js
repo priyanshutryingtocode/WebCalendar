@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Holidays from 'date-holidays';
 
 const cache = {};
 
@@ -7,36 +8,43 @@ export function useHolidays(year) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchHolidays = async () => {
-      if (cache[year]) {
-        setHolidays(cache[year]);
-        setLoading(false);
-        return;
-      }
+    if (cache[year]) {
+      setHolidays(cache[year]);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/IN`);
-        const data = await res.json();
+    setLoading(true);
 
-        const formatted = data.map(h => ({
-          id: `holiday-${h.date}-${h.name}`,
-          startDate: h.date,
-          endDate: h.date,
-          note: h.localName || h.name,
-          category: 'holiday',
-          isReadOnly: true
-        }));
+    try {
+      const hd = new Holidays('IN');
+      
+      const rawHolidays = hd.getHolidays(year);
 
-        cache[year] = formatted;
-        setHolidays(formatted);
-      } catch {
-        setHolidays([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const formatted = rawHolidays
+        .filter(h => h.type === 'public')
+        .map(h => {
+          const dateStr = h.date.split(' ')[0]; 
 
-    fetchHolidays();
+          return {
+            id: `holiday-${dateStr}-${h.name.replace(/\s+/g, '-')}`,
+            startDate: dateStr,
+            endDate: dateStr,
+            note: h.name,
+            category: 'holiday',
+            isReadOnly: true
+          };
+        });
+
+      cache[year] = formatted;
+      setHolidays(formatted);
+
+    } catch (error) {
+      console.error("Failed to calculate holidays:", error);
+      setHolidays([]);
+    } finally {
+      setLoading(false);
+    }
   }, [year]);
 
   return { holidays, loading };
