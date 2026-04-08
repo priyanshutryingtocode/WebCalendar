@@ -2,11 +2,11 @@
 import { motion } from 'framer-motion';
 
 const THEMES = {
-  default: { core: 'bg-blue-500', range: 'bg-blue-50' },
-  work: { core: 'bg-indigo-600', range: 'bg-indigo-50' },
-  holiday: { core: 'bg-emerald-500', range: 'bg-emerald-50' },
-  personal: { core: 'bg-amber-500', range: 'bg-amber-50' },
-  pending: { core: 'bg-gray-400', range: 'bg-gray-100' }
+  default: { core: 'bg-blue-500', range: 'bg-blue-50 dark:bg-blue-500/20' },
+  work: { core: 'bg-indigo-600', range: 'bg-indigo-50 dark:bg-indigo-500/20' },
+  holiday: { core: 'bg-emerald-500', range: 'bg-emerald-50 dark:bg-emerald-500/20' },
+  personal: { core: 'bg-amber-500', range: 'bg-amber-50 dark:bg-amber-500/20' },
+  pending: { core: 'bg-gray-400', range: 'bg-gray-100 dark:bg-gray-700/50' }
 };
 
 export default function CalendarGrid({ currentDate, events, pendingSelection, onDateClick }) {
@@ -62,7 +62,7 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
     <div className="w-full pb-2">
       <div className="grid grid-cols-7 mb-2">
         {daysOfWeek.map((day, index) => (
-          <div key={day} className={`text-[10px] font-bold text-center tracking-wider ${index >= 5 ? 'text-[#0088cc]' : 'text-gray-600'}`}>
+          <div key={day} className={`text-[10px] font-bold text-center tracking-wider ${index >= 5 ? 'text-[#0088cc] dark:text-[#33aaff]' : 'text-gray-600 dark:text-gray-400'}`}>
             {day}
           </div>
         ))}
@@ -72,9 +72,9 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
         {gridData.map((item, index) => {
           const status = getDayStatus(item.str);
           
-          let textColor = "text-gray-800";
-          if (!item.current) textColor = "text-gray-300";
-          else if (item.weekend) textColor = "text-[#0088cc]";
+          let textColor = "text-gray-800 dark:text-gray-100";
+          if (!item.current) textColor = "text-gray-300 dark:text-gray-600";
+          else if (item.weekend) textColor = "text-[#0088cc] dark:text-[#33aaff]";
           
           if (status && (status.type === 'start' || status.type === 'end' || status.type === 'single')) {
               textColor = "text-white";
@@ -86,7 +86,6 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
               {status && status.type === 'start' && status.type !== 'single' && <div className={`absolute inset-y-0.5 right-0 w-1/2 ${status.theme.range}`}></div>}
               {status && status.type === 'end' && <div className={`absolute inset-y-0.5 left-0 w-1/2 ${status.theme.range}`}></div>}
 
-              {/* Click interactions remain intact! */}
               <motion.button 
                 onClick={() => onDateClick(item.str)}
                 whileHover={{ scale: 1.15 }}
@@ -94,7 +93,7 @@ export default function CalendarGrid({ currentDate, events, pendingSelection, on
                 className={`
                   relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs transition-colors font-medium
                   ${textColor}
-                  ${status && (status.type === 'start' || status.type === 'end' || status.type === 'single') ? `${status.theme.core} shadow-md` : 'hover:bg-gray-200'}
+                  ${status && (status.type === 'start' || status.type === 'end' || status.type === 'single') ? `${status.theme.core} shadow-md` : 'hover:bg-gray-200 dark:hover:bg-gray-800'}
                 `}
               >
                 {item.date}
