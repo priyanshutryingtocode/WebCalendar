@@ -30,7 +30,7 @@ export default function Calendar() {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const allEvents = useMemo(() => [...events, ...holidays], [events, holidays]);
+  const allEvents = useMemo(() => [...(events || []), ...(holidays || [])], [events, holidays]);
 
   const monthKey = `${year}-${currentDate.getMonth()}`;
   const notes = notesMap[monthKey] || "";
@@ -47,10 +47,9 @@ export default function Calendar() {
   };
 
   const handleDragStart = (dateStr) => {
-
     const sortedEvents = [...allEvents].sort((a, b) => {
-      const lenA = new Date(a.endDate) - new Date(a.startDate);
-      const lenB = new Date(b.endDate) - new Date(b.startDate);
+      const lenA = new Date(a.endDate || a.startDate) - new Date(a.startDate);
+      const lenB = new Date(b.endDate || b.startDate) - new Date(b.startDate);
       return lenA - lenB;
     });
     
@@ -79,7 +78,6 @@ export default function Calendar() {
 
   const handleDragEnd = () => {
     setIsDragging(false);
-
     if (selection.start && !selection.end) {
       setSelection({ start: selection.start, end: selection.start });
     }
@@ -92,38 +90,41 @@ export default function Calendar() {
   const showPanel = selection.start || activeEvent;
 
   return (
-    <div className="w-full p-4 py-8 flex justify-center items-center relative">
+    <div 
+      className="w-full p-2 sm:p-4 py-8 flex justify-center items-center relative"
+      onTouchEnd={handleDragEnd}
+    >
 
       {/* Search + Theme */}
       <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search notes..."
-            className="pl-9 pr-8 py-1.5 rounded-full text-xs bg-white dark:bg-gray-800 border dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#0088cc] w-32 md:w-48 transition-all dark:text-gray-200"
+            className="pl-8 pr-8 py-1 rounded-full text-[10px] sm:text-xs bg-white dark:bg-gray-800 border dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-[#0088cc] w-28 sm:w-48 transition-all dark:text-gray-200"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <X size={12} />
+              <X size={10} />
             </button>
           )}
         </div>
 
-        <button onClick={toggleTheme} className="p-2 rounded-full shadow-sm bg-white dark:bg-gray-800 border dark:border-gray-700 text-gray-800 dark:text-gray-200">
-          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+        <button onClick={toggleTheme} className="p-1.5 sm:p-2 rounded-full shadow-sm bg-white dark:bg-gray-800 border dark:border-gray-700 text-gray-800 dark:text-gray-200">
+          {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
         </button>
       </div>
 
       <div className="bg-white dark:bg-gray-900 w-full max-w-xl shadow-2xl relative rounded-sm perspective-[2000px]">
 
         {/* SPIRAL BINDING */}
-        <div className="absolute top-0 left-0 w-full flex justify-around px-6 z-50 opacity-70 pointer-events-none">
-          {Array.from({ length: 18 }).map((_, i) => (
+        <div className="absolute top-0 left-0 w-full flex justify-around px-4 sm:px-6 z-50 opacity-70 pointer-events-none">
+          {Array.from({ length: 14 }).map((_, i) => (
             <div
               key={i}
-              className="w-1 h-3 bg-gray-800 dark:bg-black rounded-b-full shadow-sm"
+              className="w-0.5 sm:w-1 h-2 sm:h-3 bg-gray-800 dark:bg-black rounded-b-full shadow-sm"
             />
           ))}
         </div>
@@ -150,10 +151,10 @@ export default function Calendar() {
               onNextMonth={() => handleMonthChange(1)}
             />
 
-            <div className="flex flex-col md:flex-row pt-4 pb-6 gap-4 px-4 md:px-6">
+            <div className="flex flex-col md:flex-row pt-4 pb-6 gap-6 px-4 md:px-6">
 
               {/* Sidebar */}
-              <div className="w-full md:w-[40%] flex flex-col">
+              <div className="w-full md:w-[40%] flex flex-col order-2 md:order-1">
                 {showPanel ? (
                   <EventPanel
                     pendingSelection={selection}
@@ -178,7 +179,7 @@ export default function Calendar() {
               </div>
 
               {/* Grid */}
-              <div className="w-full md:w-[60%] flex flex-col overflow-hidden">
+              <div className="w-full md:w-[60%] flex flex-col overflow-hidden order-1 md:order-2">
                 <CalendarGrid
                   currentDate={currentDate}
                   events={allEvents}

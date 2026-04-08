@@ -118,10 +118,21 @@ export default function CalendarGrid({
     };
   };
 
+  const handleTouchMove = (e) => {
+    if (!e.touches[0]) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const dateStr = el?.getAttribute('data-date');
+    if (dateStr) onDragHover(dateStr);
+  };
+
   return (
-    <div className="w-full select-none mt-4" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
-      
-      <div className="grid grid-cols-7 mb-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest">
+    <div 
+      className="w-full select-none mt-2 sm:mt-4 touch-none" 
+      onMouseUp={onDragEnd} 
+      onMouseLeave={onDragEnd}
+    >
+      <div className="grid grid-cols-7 mb-2 text-[8px] sm:text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <div key={d}>{d}</div>)}
       </div>
 
@@ -137,20 +148,22 @@ export default function CalendarGrid({
           return (
             <div
               key={i}
+              data-date={item.str} 
               className={`relative flex justify-center py-0.5 ${filterClass}`}
               onMouseEnter={() => onDragHover(item.str)}
+              onTouchMove={handleTouchMove}
             >
               {status?.bgType === 'single' && (
-                <div className={`absolute h-7 w-7 top-1/2 -translate-y-1/2 rounded-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
+                <div className={`absolute h-6 sm:h-7 w-6 sm:w-7 top-1/2 -translate-y-1/2 rounded-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
               )}
               {status?.bgType === 'in-range' && (
-                <div className={`absolute h-7 top-1/2 -translate-y-1/2 inset-x-0 ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
+                <div className={`absolute h-6 sm:h-7 top-1/2 -translate-y-1/2 inset-x-0 ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
               )}
               {status?.bgType === 'start' && (
-                <div className={`absolute h-7 top-1/2 -translate-y-1/2 right-0 w-[calc(50%+14px)] rounded-l-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
+                <div className={`absolute h-6 sm:h-7 top-1/2 -translate-y-1/2 right-0 w-[calc(50%+12px)] sm:w-[calc(50%+14px)] rounded-l-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
               )}
               {status?.bgType === 'end' && (
-                <div className={`absolute h-7 top-1/2 -translate-y-1/2 left-0 w-[calc(50%+14px)] rounded-r-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
+                <div className={`absolute h-6 sm:h-7 top-1/2 -translate-y-1/2 left-0 w-[calc(50%+12px)] sm:w-[calc(50%+14px)] rounded-r-full ${status.bgCoreClass} opacity-25 dark:opacity-30`}></div>
               )}
 
               <motion.button
@@ -161,12 +174,13 @@ export default function CalendarGrid({
                   e.preventDefault();
                   onDragStart(item.str);
                 }}
+                onTouchStart={() => onDragStart(item.str)}
                 className={`
-                  relative z-10 w-7 h-7 flex items-center justify-center text-xs font-medium rounded-full transition-all
+                  relative z-10 w-6 sm:w-7 h-6 sm:h-7 flex items-center justify-center text-[10px] sm:text-xs font-medium rounded-full transition-all
                   ${!item.current ? 'text-gray-300 dark:text-gray-600' : 'text-gray-800 dark:text-gray-100'}
                   
                   ${(status?.focusType === 'start' || status?.focusType === 'end' || status?.focusType === 'single') 
-                      ? `${status.fgCoreClass} text-white! shadow-sm` 
+                      ? `${status.fgCoreClass} text-white shadow-sm` 
                       : (!status && item.current ? 'hover:bg-gray-200 dark:hover:bg-gray-800' : '')}
                   
                   ${isToday ? 'ring-2 ring-amber-500 ring-offset-2 dark:ring-offset-white font-bold' : ''}

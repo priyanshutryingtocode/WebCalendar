@@ -55,10 +55,10 @@ export default function CalendarHeader({
       <div className="absolute inset-0 bg-black/10 z-10"></div>
 
       <div
-        className="absolute bottom-0 right-0 w-[60%] h-24 bg-[#0088cc] z-20"
+        className="absolute bottom-0 right-0 w-[85%] sm:w-[60%] h-24 bg-[#0088cc] z-20 transition-all duration-300"
         style={{ clipPath: 'polygon(0 100%, 100% 0, 100% 100%)' }}
       >
-        <div className="absolute bottom-5 right-6 text-white flex flex-col items-center gap-0.5">
+        <div className="absolute bottom-5 right-4 sm:right-6 text-white flex flex-col items-center gap-0.5">
 
           {/* Navigation */}
           <div className="flex items-center">
@@ -69,7 +69,7 @@ export default function CalendarHeader({
               <ChevronLeft size={16} strokeWidth={2} />
             </button>
 
-            <div className="text-xs tracking-[0.2em] font-light w-12 text-center">
+            <div className="text-[10px] sm:text-xs tracking-[0.2em] font-light w-12 text-center">
               {currentYear}
             </div>
 
@@ -82,7 +82,7 @@ export default function CalendarHeader({
           </div>
 
           {/* Month */}
-          <div className="text-lg leading-none font-bold tracking-widest uppercase">
+          <div className="text-base sm:text-lg leading-none font-bold tracking-widest uppercase">
             {monthNames[safeMonthIndex]}
           </div>
 
