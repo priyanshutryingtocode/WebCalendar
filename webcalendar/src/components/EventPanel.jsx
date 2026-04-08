@@ -45,7 +45,7 @@ export default function EventPanel({
   const lineColor = isDarkMode ? '#37415180' : '#e5e7eb80';
 
   return (
-    <div className="flex flex-col h-65 animate-in fade-in duration-300">
+    <div className="flex flex-col h-60 animate-in fade-in duration-300 mt-2">
       <div className="flex justify-between items-center mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-1.5">
           {isReadOnly ? <Sparkles size={12} className="text-emerald-500" /> :

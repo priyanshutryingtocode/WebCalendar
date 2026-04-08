@@ -7,7 +7,7 @@ export default function NotesSection({ notes, onNotesChange, isDarkMode }) {
   const clearNotes = () => onNotesChange('');
 
   return (
-    <div className="flex flex-col h-65 pt-1 animate-in fade-in duration-300 group">
+    <div className="flex flex-col h-60 pt-1 animate-in fade-in duration-300 group mt-2">
       <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-1.5">
           <StickyNote size={12} className="text-gray-400 dark:text-gray-500" />

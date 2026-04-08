@@ -119,7 +119,7 @@ export default function CalendarGrid({
   };
 
   return (
-    <div className="w-full select-none" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
+    <div className="w-full select-none mt-4" onMouseUp={onDragEnd} onMouseLeave={onDragEnd}>
       
       <div className="grid grid-cols-7 mb-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => <div key={d}>{d}</div>)}
